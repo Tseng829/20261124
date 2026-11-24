@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>數列攻防戰｜遊戲玩法與互動說明</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #b8dcff 0%, #dceeff 35%, #eef6ff 72%, #e3f4d7 100%);
+      overflow-x: hidden;
+      color: #2d2622;
+    }
+
+    /* 標題彩色立體描邊效果 */
+    .title-stroke {
+      -webkit-text-stroke: 7px #332722;
+      paint-order: stroke fill;
+      text-shadow: 0 5px 0 #332722;
+    }
+    @media (max-width: 640px) {
+      .title-stroke {
+        -webkit-text-stroke: 5px #332722;
+        text-shadow: 0 3px 0 #332722;
+      }
+    }
+
+    /* 卡片柔和立體陰影 */
+    .bento-card {
+      border-radius: 26px;
+      border: 2.5px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 8px 20px rgba(71, 102, 145, 0.12), inset 0 2px 6px rgba(255, 255, 255, 0.7);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+    }
+    .bento-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(71, 102, 145, 0.16), inset 0 2px 6px rgba(255, 255, 255, 0.85);
+    }
+
+    /* 擬真撲克牌樣式 */
+    .play-card {
+      background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(30, 41, 59, 0.12);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+      user-select: none;
+    }
+    .play-card:hover {
+      transform: translateY(-4px) scale(1.04);
+      box-shadow: 0 8px 14px rgba(30, 41, 59, 0.18);
+    }
+
+    /* 漂浮雲朵與星星動畫 */
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes twinkle {
+      0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.95; }
+      50% { transform: scale(1.18) rotate(12deg); opacity: 0.65; }
+    }
+    @keyframes knightBounce {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-6px) rotate(1.5deg); }
+    }
+
+    .animate-cloud {
+      animation: floatSlow 5.5s ease-in-out infinite;
+    }
+    .animate-star {
+      animation: twinkle 3s ease-in-out infinite;
+    }
+    .animate-knight {
+      animation: knightBounce 3.2s ease-in-out infinite;
+    }
+
+    /* 自訂捲軸 */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #e2e8f0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="relative pb-12 selection:bg-amber-200 selection:text-amber-900">
+
+  <!-- 背景裝飾：雲朵、星星與底部城堡草地 -->
+  <div class="pointer-events-none fixed inset-0 overflow-hidden z-0">
+    <!-- 左上雲朵 -->
+    <svg class="animate-cloud absolute top-6 left-4 w-48 sm:w-64 opacity-80" viewBox="0 0 200 80" fill="none">
+      <path d="M35 65H165C180 65 190 54 190 41C190 29 181 20 169 19C164 8 152 0 138 0C125 0 114 7 109 17C104 14 98 12 91 12C76 12 63 22 60 36C57 35 54 34 50 34C36 34 25 45 25 58C25 61 29 65 35 65Z" fill="white" />
+    </svg>
+    <!-- 右上雲朵 -->
+    <svg class="animate-cloud absolute top-10 right-6 w-56 sm:w-72 opacity-85" style="animation-delay: 1.8s;" viewBox="0 0 220 90" fill="none">
+      <path d="M30 75H185C202 75 215 62 215 46C215 32 204 21 190 20C184 8 171 0 156 0C141 0 128 8 123 20C117 16 110 14 102 14C85 14 71 26 68 41C64 40 60 39 55 39C39 39 26 52 26 67C26 71 27 75 30 75Z" fill="white" />
+    </svg>
+    <!-- 金色四角星光 -->
+    <svg class="animate-star absolute top-16 left-[27%] w-7 h-7" viewBox="0 0 32 32">
+      <path d="M16 0L19.8 12.2L32 16L19.8 19.8L16 32L12.2 19.8L0 16L12.2 12.2L16 0Z" fill="#FBBF24" stroke="#78350F" stroke-width="1.5"/>
+    </svg>
+    <svg class="animate-star absolute top-10 right-[28%] w-8 h-8" style="animation-delay: 1s;" viewBox="0 0 32 32">
+      <path d="M16 0L19.8 12.2L32 16L19.8 19.8L16 32L12.2 19.8L0 16L12.2 12.2L16 0Z" fill="#FCD34D" stroke="#78350F" stroke-width="1.5"/>
+    </svg>
+    <svg class="animate-star absolute top-28 right-[8%] w-7 h-7" style="animation-delay: 2s;" viewBox="0 0 32 32">
+      <path d="M16 0L19.8 12.2L32 16L19.8 19.8L16 32L12.2 19.8L0 16L12.2 12.2L16 0Z" fill="#FBBF24" stroke="#78350F" stroke-width="1.5"/>
+    </svg>
+
+    <!-- 底部遠景城堡與草地剪影 -->
+    <div class="absolute bottom-0 inset-x-0 h-32">
+      <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 1440 160" fill="none">
+        <!-- 遠處山丘 -->
+        <path d="M0 110C220 75 430 130 720 105C1010 80 1230 120 1440 95V160H0V110Z" fill="#C4E1B3"/>
+        <!-- 遠處童話城堡剪影 -->
+        <g transform="translate(940, 22)" opacity="0.85">
+          <rect x="20" y="45" width="70" height="55" fill="#9BB5D6"/>
+          <rect x="10" y="25" width="22" height="75" fill="#88A4C9"/>
+          <polygon points="8,25 21,5 34,25" fill="#E07A7A"/>
+          <rect x="78" y="25" width="22" height="75" fill="#88A4C9"/>
+          <polygon points="76,25 89,5 102,25" fill="#E07A7A"/>
+          <rect x="44" y="15" width="22" height="85" fill="#7D99BF"/>
+          <polygon points="41,15 55,-5 69,15" fill="#F59E0B"/>
+          <path d="M47 100V80C47 75 63 75 63 80V100H47Z" fill="#5D789E"/>
+        </g>
+        <!-- 前景翠綠草地 -->
+        <path d="M0 125C320 105 640 145 960 120C1180 105 1340 125 1440 120V160H0V125Z" fill="#9CD081"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- 主內容容器 -->
+  <div class="relative z-10 max-w-[1260px] mx-auto px-4 sm:px-6 pt-5 sm:pt-7">
+
+    <!-- 頂部主標題區 -->
+    <header class="relative flex flex-col items-center justify-center mb-6 sm:mb-7">
+      <div class="flex items-center justify-center gap-2 sm:gap-4">
+        <!-- 金色皇冠圖示 -->
+        <svg class="w-14 h-14 sm:w-20 sm:h-20 -rotate-12 drop-shadow-md flex-shrink-0" viewBox="0 0 100 85" fill="none">
+          <path d="M12 65L6 24L32 42L50 14L68 42L94 24L88 65H12Z" fill="#FBBF24" stroke="#3D2C24" stroke-width="5" stroke-linejoin="round"/>
+          <rect x="14" y="65" width="72" height="12" rx="5" fill="#F59E0B" stroke="#3D2C24" stroke-width="5"/>
+          <circle cx="6" cy="21" r="5" fill="#FDE047" stroke="#3D2C24" stroke-width="3.5"/>
+          <circle cx="50" cy="11" r="6" fill="#FDE047" stroke="#3D2C24" stroke-width="3.5"/>
+          <circle cx="94" cy="21" r="5" fill="#FDE047" stroke="#3D2C24" stroke-width="3.5"/>
+        </svg>
+
+        <!-- 彩色立體描邊大標題 -->
+        <h1 class="text-4xl sm:text-6xl md:text-[64px] font-black tracking-wider flex items-center select-none">
+          <span class="title-stroke text-[#3B82F6]">數</span>
+          <span class="title-stroke text-[#60A5FA]">列</span>
+          <span class="title-stroke text-[#FB923C]">攻</span>
+          <span class="title-stroke text-[#F87171]">防</span>
+          <span class="title-stroke text-[#4ADE80]">戰</span>
+        </h1>
+      </div>
+
+      <!-- 金色緞帶副標題「★ 遊戲玩法 ★」 -->
+      <div class="relative -mt-1 sm:-mt-2 flex items-center justify-center">
+        <!-- 左緞帶尾 -->
+        <div class="w-8 h-8 bg-[#F59E0B] border-2 border-[#78350F] rounded-l-md -mr-2 mt-2 skew-y-6 shadow"></div>
+        <!-- 主緞帶 -->
+        <div class="relative z-10 bg-gradient-to-b from-[#FDE68A] to-[#FCD34D] border-2 border-[#B45309] px-7 sm:px-10 py-1.5 rounded-2xl shadow-md flex items-center gap-3">
+          <span class="text-white drop-shadow text-lg sm:text-xl">★</span>
+          <span class="text-xl sm:text-2xl font-black text-[#2D221B] tracking-[0.2em]">遊戲玩法</span>
+          <span class="text-white drop-shadow text-lg sm:text-xl">★</span>
+        </div>
+        <!-- 右緞帶尾 -->
+        <div class="w-8 h-8 bg-[#F59E0B] border-2 border-[#78350F] rounded-r-md -ml-2 mt-2 -skew-y-6 shadow"></div>
+      </div>
+
+      <!-- 右上角斜向手寫風標語 -->
+      <div class="mt-3 lg:mt-0 lg:absolute lg:right-2 lg:top-2 bg-white/80 backdrop-blur-sm border-2 border-white px-5 py-2.5 rounded-3xl shadow-sm -rotate-6">
+        <p class="text-base sm:text-xl font-black text-[#332722] leading-snug text-center">
+          看準規律，<br class="hidden lg:inline" />出牌攻防！
+        </p>
+      </div>
+    </header>
+
+    <!-- Bento Grid 雙欄式主版面（左 32% / 右 68%） -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+
+      <!-- ================= 左側欄（4 欄 ≈ 33%） ================= -->
+      <div class="lg:col-span-4 flex flex-col gap-5">
+
+        <!-- 卡片 1：遊戲目標 -->
+        <section class="bento-card bg-[#FAF5EF] p-5 relative">
+          <div class="inline-flex items-center gap-2.5 bg-[#F3E5D0] border border-[#E5CFAF] px-4 py-1.5 rounded-full mb-3 shadow-xs">
+            <!-- 紅色標靶箭矢 SVG -->
+            <svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+              <circle cx="17" cy="19" r="13" fill="#EF4444" stroke="#451A03" stroke-width="2"/>
+              <circle cx="17" cy="19" r="8.5" fill="#FFFFFF"/>
+              <circle cx="17" cy="19" r="4" fill="#EF4444"/>
+              <path d="M18 18L31 5M31 5H25M31 5V11" stroke="#78350F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h2 class="text-xl font-black text-[#2D221B]">遊戲目標</h2>
+          </div>
+
+          <p class="text-[17px] font-bold text-[#3D312A] leading-relaxed mb-3">
+            透過組成、延伸及重新排列數列，<br />
+            率先將手牌全部出完！
+          </p>
+
+          <!-- 花色正負數小提示按鈕與展開面板 -->
+          <div>
+            <button id="toggleSuitHintBtn" type="button"
+              class="inline-flex items-center gap-1.5 text-xs font-black bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-full transition cursor-pointer">
+              <span>💡 花色正負數與牌值對照</span>
+              <span id="suitHintArrow">▼</span>
+            </button>
+            <div id="suitHintBox" class="hidden mt-2.5 bg-white/90 border border-amber-200 rounded-2xl p-3 text-xs font-bold text-slate-700 space-y-1.5 shadow-inner">
+              <div class="flex items-center justify-between">
+                <span class="text-rose-600 font-black">♥ 紅心 / ♦ 方塊 ＝ 正數（+）</span>
+                <span class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded-md">例：♥5 = +5</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-800 font-black">♠ 黑桃 / ♣ 梅花 ＝ 負數（-）</span>
+                <span class="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md">例：♠3 = -3</span>
+              </div>
+              <div class="pt-1 border-t border-slate-100 text-slate-600">
+                牌面數值：<span class="text-indigo-700 font-black">A=1、J=11、Q=12、K=13</span>，0牌=0，鬼牌可代任意數。
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 卡片 2：遊戲準備 -->
+        <section class="bento-card bg-[#FAF5EF] p-5">
+          <div class="inline-flex items-center gap-2.5 bg-[#F3E5D0] border border-[#E5CFAF] px-4 py-1.5 rounded-full mb-3.5">
+            <!-- 橘色齒輪 SVG -->
+            <svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+              <path d="M18 11C14.1 11 11 14.1 11 18C11 21.9 14.1 25 18 25C21.9 25 25 21.9 25 18C25 14.1 21.9 11 18 11Z" fill="#FB923C" stroke="#451A03" stroke-width="2"/>
+              <path d="M18 4V7M18 29V32M4 18H7M29 18H32M8.1 8.1L10.2 10.2M25.8 25.8L27.9 27.9M27.9 8.1L25.8 10.2M10.2 25.8L8.1 27.9" stroke="#EA580C" stroke-width="3.5" stroke-linecap="round"/>
+              <circle cx="18" cy="18" r="4" fill="#FEF3C7" stroke="#451A03" stroke-width="1.8"/>
+            </svg>
+            <h2 class="text-xl font-black text-[#2D221B]">遊戲準備</h2>
+          </div>
+
+          <ol class="space-y-3 text-[16px] font-bold text-[#3D312A]">
+            <li class="flex items-start gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-[#4B79B8] text-white text-sm font-black flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">1</span>
+              <span>洗勻兩副撲克牌 + 4張鬼牌 + 8張0牌<span class="text-xs text-slate-500 block font-semibold">（共 116 張牌卡）</span></span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-[#4B79B8] text-white text-sm font-black flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">2</span>
+              <span>每位玩家發 <span class="text-[#D97706] font-black">14 張牌</span></span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-[#4B79B8] text-white text-sm font-black flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">3</span>
+              <span>放置數列排列區，決定起始玩家</span>
+            </li>
+          </ol>
+        </section>
+
+        <!-- 卡片 3：特殊數列標示卡（含互動切換） -->
+        <section class="bento-card bg-[#FAF5EF] p-5 flex-1 flex flex-col justify-between">
+          <div>
+            <div class="inline-flex items-center gap-2.5 bg-[#FDE68A] border border-[#F59E0B]/40 px-4 py-1.5 rounded-full mb-3">
+              <!-- 黃色星星 SVG -->
+              <svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+                <path d="M18 3L22.6 12.4L33 13.9L25.5 21.2L27.3 31.5L18 26.6L8.7 31.5L10.5 21.2L3 13.9L13.4 12.4L18 3Z" fill="#FBBF24" stroke="#451A03" stroke-width="2.2" stroke-linejoin="round"/>
+              </svg>
+              <h2 class="text-xl font-black text-[#2D221B]">特殊數列標示卡</h2>
+            </div>
+            <p class="text-[16px] font-bold text-[#3D312A] leading-snug mb-3">
+              標示場上數列類型，幫助辨識規律！<br />
+              <span class="text-xs text-amber-800 font-semibold">👆 點擊下方標示卡切換查看數列範例：</span>
+            </p>
+          </div>
+
+          <!-- 互動標示卡切換區 -->
+          <div class="bg-white/85 rounded-2xl p-3 border border-amber-200/80 mb-3 text-center">
+            <div class="flex flex-wrap justify-center gap-1.5 mb-2">
+              <button type="button" onclick="selectBadgeType('arithmetic')" id="badge-btn-arithmetic"
+                class="badge-tab px-2.5 py-1 rounded-full text-xs font-black bg-blue-500 text-white shadow-xs cursor-pointer">等差數列</button>
+              <button type="button" onclick="selectBadgeType('geometric')" id="badge-btn-geometric"
+                class="badge-tab px-2.5 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-600 hover:bg-purple-100 cursor-pointer">等比數列</button>
+              <button type="button" onclick="selectBadgeType('consecutive')" id="badge-btn-consecutive"
+                class="badge-tab px-2.5 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-600 hover:bg-emerald-100 cursor-pointer">連續數列</button>
+              <button type="button" onclick="selectBadgeType('alternating')" id="badge-btn-alternating"
+                class="badge-tab px-2.5 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-600 hover:bg-rose-100 cursor-pointer">交替數列</button>
+              <button type="button" onclick="selectBadgeType('square')" id="badge-btn-square"
+                class="badge-tab px-2.5 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-600 hover:bg-amber-100 cursor-pointer">平方數列</button>
+            </div>
+            <div id="badgeDisplayArea" class="py-1.5">
+              <div class="text-sm font-black text-blue-700" id="badgeTitle">等差數列（每次 +2）</div>
+              <div class="text-lg font-black text-slate-800 tracking-wider mt-0.5" id="badgeSeq">1 → 3 → 5 → 7</div>
+              <div class="text-xs font-bold text-slate-500 mt-0.5" id="badgeDesc">相鄰兩張數字的差相同</div>
+            </div>
+          </div>
+
+          <!-- 三張扇形標示卡視覺插畫（藍星、紫菱形、綠梅花） -->
+          <div class="flex items-center justify-center pt-1 pb-1">
+            <div onclick="selectBadgeType('arithmetic')" title="點擊查看等差數列"
+              class="play-card w-16 h-22 py-2 flex flex-col items-center justify-between -rotate-12 -mr-2 cursor-pointer border-blue-300 bg-blue-50/60">
+              <span class="text-[11px] font-black text-blue-600 self-start pl-1.5">10</span>
+              <span class="text-2xl text-blue-500">★</span>
+              <span class="text-[10px] font-black text-blue-700">等差</span>
+            </div>
+            <div onclick="selectBadgeType('geometric')" title="點擊查看等比數列"
+              class="play-card w-16 h-22 py-2 flex flex-col items-center justify-between z-10 -translate-y-1 cursor-pointer border-purple-300 bg-purple-50/60">
+              <span class="text-[11px] font-black text-purple-600 self-start pl-1.5">3</span>
+              <span class="text-2xl text-purple-500">♦</span>
+              <span class="text-[10px] font-black text-purple-700">等比</span>
+            </div>
+            <div onclick="selectBadgeType('consecutive')" title="點擊查看連續數列"
+              class="play-card w-16 h-22 py-2 flex flex-col items-center justify-between rotate-12 -ml-2 cursor-pointer border-emerald-300 bg-emerald-50/60">
+              <span class="text-[11px] font-black text-emerald-600 self-start pl-1.5">8</span>
+              <span class="text-2xl text-emerald-600">♣</span>
+              <span class="text-[10px] font-black text-emerald-700">連續</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ================= 右側欄（8 欄 ≈ 67%） ================= -->
+      <div class="lg:col-span-8 flex flex-col gap-4 relative">
+
+        <!-- 遊戲流程大外框容器 -->
+        <div class="bg-white/65 backdrop-blur-md border-2 border-white rounded-[30px] p-4 sm:p-5 shadow-lg relative">
+
+          <!-- 頂部粉色膠囊標籤「▶ 遊戲流程」 -->
+          <div class="inline-flex items-center gap-2.5 bg-gradient-to-r from-[#F9D5D3] to-[#F6E2CE] border-2 border-white px-5 py-1.5 rounded-full shadow-sm mb-4">
+            <span class="w-7 h-7 rounded-lg bg-[#EAB308] border-2 border-[#451A03] flex items-center justify-center text-white text-xs shadow-xs">▶</span>
+            <h2 class="text-xl sm:text-2xl font-black text-[#2D221B] tracking-wide">遊戲流程</h2>
+          </div>
+
+          <!-- 上排三張流程卡（1 破冰規則、2 組成數列、3 延伸與鬼牌） -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+
+            <!-- 步驟 1：破冰規則（珊瑚紅卡片） -->
+            <div class="bento-card bg-[#FDE4DB] border-2 border-[#EA580C] p-4 flex flex-col justify-between relative">
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-full bg-[#EA580C] text-white font-black flex items-center justify-center text-base shadow-xs">1</span>
+                    <h3 class="text-lg font-black text-[#2D221B]">破冰規則</h3>
+                  </div>
+                  <button type="button" onclick="openIceModal()"
+                    class="text-[11px] font-black bg-[#EA580C] hover:bg-[#C2410C] text-white px-2.5 py-1 rounded-full shadow-xs transition cursor-pointer">
+                    🧮 互動試算
+                  </button>
+                </div>
+                <p class="text-[13.5px] font-bold text-[#3D312A] leading-snug mb-3">
+                  首次出牌（破冰）只能使用自己的手牌，且數字加總必須 <span class="text-[#C2410C] font-black">≧ 30 分！</span>
+                </p>
+              </div>
+
+              <!-- 紅心 8、紅心 10、紅心 12 撲克牌展示 -->
+              <div>
+                <div class="flex items-center justify-center gap-1.5">
+                  <div class="play-card w-12 h-16 flex flex-col items-center justify-center -rotate-3">
+                    <span class="text-[10px] font-black text-rose-600 leading-none self-start pl-1.5">8</span>
+                    <span class="text-lg font-black text-rose-600 leading-tight">8</span>
+                    <span class="text-xs text-rose-600 leading-none">♥</span>
+                  </div>
+                  <div class="play-card w-12 h-16 flex flex-col items-center justify-center">
+                    <span class="text-[10px] font-black text-rose-600 leading-none self-start pl-1.5">10</span>
+                    <span class="text-lg font-black text-rose-600 leading-tight">10</span>
+                    <span class="text-xs text-rose-600 leading-none">♥</span>
+                  </div>
+                  <div class="play-card w-12 h-16 flex flex-col items-center justify-center rotate-3">
+                    <span class="text-[10px] font-black text-rose-600 leading-none self-start pl-1.5">12</span>
+                    <span class="text-lg font-black text-rose-600 leading-tight">12</span>
+                    <span class="text-xs text-rose-600 leading-none">♥</span>
+                  </div>
+                  <div class="text-[11px] font-black text-[#9A3412] leading-tight pl-1">
+                    8+10+12=30<br />
+                    <span class="bg-white/80 px-1.5 py-0.5 rounded text-[10px] inline-block mt-0.5">≧ 30 (限手牌)</span>
+                  </div>
+                </div>
+                <p class="text-center text-xs font-black text-[#7C2D12] mt-2">破冰（首次出牌）</p>
+              </div>
+            </div>
+
+            <!-- 步驟 2：組成數列（暖橘色卡片） -->
+            <div class="bento-card bg-[#FDEBD3] p-4 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="w-7 h-7 rounded-full bg-[#E59A3C] text-white font-black flex items-center justify-center text-base shadow-xs">2</span>
+                  <h3 class="text-lg font-black text-[#2D221B]">組成數列</h3>
+                </div>
+                <p class="text-[13.5px] font-bold text-[#3D312A] leading-snug mb-3">
+                  觀察場上數列，打出符合規律的正確數字（例：公差 +2）
+                </p>
+              </div>
+
+              <!-- 紅心 2、4、6、8 -->
+              <div class="flex items-center justify-center gap-1.5 py-1">
+                <div class="play-card w-11 h-16 flex flex-col items-center justify-center -rotate-3">
+                  <span class="text-[9px] font-black text-rose-600 self-start pl-1">2</span>
+                  <span class="text-lg font-black text-rose-600 leading-none">2</span>
+                  <span class="text-xs text-rose-600">♥</span>
+                </div>
+                <div class="play-card w-11 h-16 flex flex-col items-center justify-center -rotate-1">
+                  <span class="text-[9px] font-black text-rose-600 self-start pl-1">4</span>
+                  <span class="text-lg font-black text-rose-600 leading-none">4</span>
+                  <span class="text-xs text-rose-600">♥</span>
+                </div>
+                <div class="play-card w-11 h-16 flex flex-col items-center justify-center rotate-1">
+                  <span class="text-[9px] font-black text-rose-600 self-start pl-1">6</span>
+                  <span class="text-lg font-black text-rose-600 leading-none">6</span>
+                  <span class="text-xs text-rose-600">♥</span>
+                </div>
+                <div class="play-card w-11 h-16 flex flex-col items-center justify-center rotate-3 border-amber-400 bg-amber-50/40">
+                  <span class="text-[9px] font-black text-rose-600 self-start pl-1">8</span>
+                  <span class="text-lg font-black text-rose-600 leading-none">8</span>
+                  <span class="text-xs text-rose-600">♥</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 步驟 3：延伸與鬼牌（抹茶綠卡片） -->
+            <div class="bento-card bg-[#E7F2D8] p-4 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="w-7 h-7 rounded-full bg-[#77A856] text-white font-black flex items-center justify-center text-base shadow-xs">3</span>
+                  <h3 class="text-lg font-black text-[#2D221B]">延伸與鬼牌</h3>
+                </div>
+                <p class="text-[13.5px] font-bold text-[#3D312A] leading-snug mb-3">
+                  觀察場上數列，打出正確數字或用<span class="text-[#3F6212] font-black">鬼牌代替</span>！
+                </p>
+              </div>
+
+              <!-- 紅心 2、4、JOKER → 紅心 8 -->
+              <div class="flex items-center justify-center gap-1 py-1">
+                <div class="play-card w-10 h-15 py-1 flex flex-col items-center justify-center -rotate-3">
+                  <span class="text-base font-black text-rose-600 leading-none">2</span>
+                  <span class="text-[11px] text-rose-600">♥</span>
+                </div>
+                <div class="play-card w-10 h-15 py-1 flex flex-col items-center justify-center">
+                  <span class="text-base font-black text-rose-600 leading-none">4</span>
+                  <span class="text-[11px] text-rose-600">♥</span>
+                </div>
+                <!-- JOKER 牌 -->
+                <div class="play-card w-11 h-15 py-1 flex flex-col items-center justify-center border-indigo-400 bg-indigo-50">
+                  <span class="text-[9px] font-black text-indigo-700 leading-none">6</span>
+                  <span class="text-base leading-tight">🤡</span>
+                  <span class="text-[8px] font-black text-indigo-800 tracking-tighter">JOKER</span>
+                </div>
+                <span class="text-amber-600 font-black text-sm">➜</span>
+                <div class="play-card w-10 h-15 py-1 flex flex-col items-center justify-center rotate-3 border-emerald-500 bg-emerald-50">
+                  <span class="text-base font-black text-rose-600 leading-none">8</span>
+                  <span class="text-[11px] text-rose-600">♥</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 下排三張流程卡（4 重新排列數列、5 抽取牌卡、思考時間計時器） -->
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+
+            <!-- 步驟 4：重新排列數列（天空藍卡片，占 5 欄） -->
+            <div class="md:col-span-5 bento-card bg-[#E3EDF8] p-4 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-full bg-[#4B79B8] text-white font-black flex items-center justify-center text-base shadow-xs">4</span>
+                    <h3 class="text-lg font-black text-[#2D221B]">重新排列數列</h3>
+                  </div>
+                  <button type="button" onclick="toggleRearrangeDemo()"
+                    class="text-[11px] font-black bg-[#4B79B8] hover:bg-[#3B6298] text-white px-2.5 py-1 rounded-full shadow-xs transition cursor-pointer">
+                    🔄 演示重排
+                  </button>
+                </div>
+                <p class="text-[13.5px] font-bold text-[#3D312A] leading-snug mb-3">
+                  調整場上數列順序，創造新的合法排列方式
+                </p>
+              </div>
+
+              <!-- 黑桃 1、3、5 → 黑桃 1、5、3 動態切換 -->
+              <div class="flex items-center justify-center gap-1.5 py-1">
+                <div class="flex items-center gap-1">
+                  <div class="play-card w-9 h-14 flex flex-col items-center justify-center">
+                    <span class="text-sm font-black text-slate-800 leading-none">1</span>
+                    <span class="text-xs text-slate-800">♠</span>
+                  </div>
+                  <div class="play-card w-9 h-14 flex flex-col items-center justify-center">
+                    <span class="text-sm font-black text-slate-800 leading-none">3</span>
+                    <span class="text-xs text-slate-800">♠</span>
+                  </div>
+                  <div class="play-card w-9 h-14 flex flex-col items-center justify-center">
+                    <span class="text-sm font-black text-slate-800 leading-none">5</span>
+                    <span class="text-xs text-slate-800">♠</span>
+                  </div>
+                </div>
+
+                <span class="text-amber-600 font-black text-base">➜</span>
+
+                <div id="rearrangeTarget" class="flex items-center gap-1 transition-all duration-300">
+                  <div class="play-card w-9 h-14 flex flex-col items-center justify-center border-blue-400">
+                    <span class="text-sm font-black text-slate-800 leading-none">1</span>
+                    <span class="text-xs text-slate-800">♠</span>
+                  </div>
+                  <div class="play-card w-9 h-14 flex flex-col items-center justify-center border-blue-400 bg-blue-50">
+                    <span id="rearrangeSlot2" class="text-sm font-black text-blue-700 leading-none">5</span>
+                    <span class="text-xs text-slate-800">♠</span>
+                  </div>
+                  <div class="play-card w-9 h-14 flex flex-col items-center justify-center border-blue-400 bg-blue-50">
+                    <span id="rearrangeSlot3" class="text-sm font-black text-blue-700 leading-none">3</span>
+                    <span class="text-xs text-slate-800">♠</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 步驟 5：抽取牌卡（淡紫色卡片，占 4 欄） -->
+            <div class="md:col-span-4 bento-card bg-[#EFE4F6] p-4 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                  <span class="w-7 h-7 rounded-full bg-[#8B68B8] text-white font-black flex items-center justify-center text-base shadow-xs">5</span>
+                  <h3 class="text-lg font-black text-[#2D221B]">抽取牌卡</h3>
+                </div>
+                <p class="text-[13.5px] font-bold text-[#3D312A] leading-snug mb-2">
+                  若無法出牌，則從牌堆抽 1 張！
+                </p>
+              </div>
+
+              <!-- 可點擊模擬抽牌的立體牌堆插畫 -->
+              <div class="flex flex-col items-center justify-center">
+                <button type="button" onclick="drawSimulatedCard()"
+                  class="group relative flex flex-col items-center focus:outline-none cursor-pointer" title="點擊牌堆模擬抽牌">
+                  <!-- 立體藍背牌堆 SVG -->
+                  <svg class="w-24 h-16 group-hover:scale-105 group-active:scale-95 transition-transform drop-shadow" viewBox="0 0 120 80" fill="none">
+                    <!-- 牌堆厚度層 -->
+                    <polygon points="15,48 65,24 108,42 58,68" fill="#CBD5E1" stroke="#475569" stroke-width="2"/>
+                    <polygon points="15,43 65,19 108,37 58,63" fill="#E2E8F0" stroke="#475569" stroke-width="2"/>
+                    <polygon points="15,38 65,14 108,32 58,58" fill="#F8FAFC" stroke="#475569" stroke-width="2"/>
+                    <!-- 頂部藍色牌背 -->
+                    <polygon points="15,34 65,10 108,28 58,54" fill="#4B6CB7" stroke="#1E293B" stroke-width="2"/>
+                    <polygon points="24,33 65,14 99,28 58,48" fill="none" stroke="#93C5FD" stroke-width="1.5" stroke-dasharray="3 2"/>
+                  </svg>
+                  <span id="drawnCardResult" class="text-[11px] font-black text-purple-800 bg-white/90 border border-purple-200 px-2.5 py-0.5 rounded-full mt-1 shadow-2xs">
+                    👆 點擊牌堆模擬抽牌
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 思考時間計時器（暖黃色卡片，占 3 欄） -->
+            <div class="md:col-span-3 bento-card bg-[#F5EAD2] p-3.5 flex flex-col justify-between items-center text-center">
+              <div class="w-full">
+                <div class="inline-flex items-center justify-center gap-1.5 mb-1">
+                  <!-- 時鐘圖示 -->
+                  <svg class="w-6 h-6" viewBox="0 0 28 28" fill="none">
+                    <circle cx="14" cy="15" r="10" fill="#FFFFFF" stroke="#2D221B" stroke-width="2.2"/>
+                    <path d="M14 9V15L18 17" stroke="#2D221B" stroke-width="2.2" stroke-linecap="round"/>
+                    <rect x="11" y="2" width="6" height="3" rx="1" fill="#94A3B8" stroke="#2D221B" stroke-width="1.5"/>
+                  </svg>
+                  <h3 class="text-base font-black text-[#2D221B]">思考時間</h3>
+                </div>
+                <p class="text-[12px] font-bold text-[#4A3B32] leading-tight">
+                  建議每回合 <span class="font-black text-[#B45309]">15～30 秒</span>
+                </p>
+              </div>
+
+              <!-- 互動倒數計時器 -->
+              <div class="w-full bg-white/85 border border-amber-300 rounded-2xl p-2 mt-1.5 shadow-inner">
+                <div id="timerDisplay" class="text-2xl font-black text-[#2D221B] tracking-wider tabular-nums">
+                  00:15
+                </div>
+                <div class="flex items-center justify-center gap-1 mt-1">
+                  <button type="button" onclick="setTimerPreset(15)" class="text-[10px] font-black bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-0.5 rounded cursor-pointer">15s</button>
+                  <button type="button" onclick="setTimerPreset(30)" class="text-[10px] font-black bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-0.5 rounded cursor-pointer">30s</button>
+                </div>
+                <div class="flex items-center justify-center gap-1.5 mt-1.5">
+                  <button type="button" id="timerStartBtn" onclick="toggleTimer()"
+                    class="text-[11px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-0.5 rounded-full cursor-pointer">
+                    開始
+                  </button>
+                  <button type="button" onclick="resetTimer()"
+                    class="text-[11px] font-black bg-slate-500 hover:bg-slate-600 text-white px-2 py-0.5 rounded-full cursor-pointer">
+                    重置
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 底部橫幅：勝利條件 -->
+          <div class="bento-card bg-[#FBF3E4] border-2 border-[#FDE68A] px-5 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pr-4 sm:pr-36">
+            <div>
+              <div class="inline-flex items-center gap-2 bg-[#FDE68A] px-3.5 py-1 rounded-full mb-1.5">
+                <!-- 金色獎盃 SVG -->
+                <svg class="w-6 h-6" viewBox="0 0 32 32" fill="none">
+                  <path d="M9 5H23V13C23 16.9 19.9 20 16 20C12.1 20 9 16.9 9 13V5Z" fill="#FBBF24" stroke="#451A03" stroke-width="2"/>
+                  <path d="M9 8H5C5 12 7 14 9 14M23 8H27C27 12 25 14 23 14" stroke="#D97706" stroke-width="2.2" stroke-linecap="round"/>
+                  <path d="M16 20V25M11 25H21" stroke="#451A03" stroke-width="2.2" stroke-linecap="round"/>
+                </svg>
+                <h3 class="text-lg font-black text-[#2D221B]">勝利條件</h3>
+              </div>
+              <p class="text-base sm:text-lg font-black text-[#2D221B]">
+                最先出完手牌的玩家，即為勝利者！
+              </p>
+            </div>
+          </div>
+
+          <!-- 右下角可愛小紅騎士高舉紅心牌角色 SVG 插畫 -->
+          <div class="animate-knight hidden sm:block absolute -bottom-5 -right-3 w-36 h-40 pointer-events-none select-none drop-shadow-lg">
+            <svg viewBox="0 0 180 200" fill="none">
+              <!-- 藍色披風 -->
+              <path d="M62 125C45 140 42 165 48 180L72 175L62 125Z" fill="#4B79B8" stroke="#3D2C24" stroke-width="3.5" stroke-linejoin="round"/>
+              <!-- 高舉的手臂與紅心撲克牌 -->
+              <g transform="rotate(-12 38 95)">
+                <rect x="14" y="42" width="44" height="62" rx="8" fill="#FFFFFF" stroke="#3D2C24" stroke-width="3.5"/>
+                <text x="20" y="57" fill="#E11D48" font-size="13" font-weight="900">5</text>
+                <path d="M36 78C36 78 24 69 24 62C24 58 27 55 31 55C33.5 55 35.2 56.5 36 58.2C36.8 56.5 38.5 55 41 55C45 55 48 58 48 62C48 69 36 78 36 78Z" fill="#E11D48"/>
+                <text x="44" y="98" fill="#E11D48" font-size="12" font-weight="900">9</text>
+              </g>
+              <!-- 左手手套 -->
+              <circle cx="52" cy="108" r="11" fill="#F87171" stroke="#3D2C24" stroke-width="3.5"/>
+              <!-- 騎士身體盔甲 -->
+              <path d="M68 122H128L138 185H58L68 122Z" fill="#E06D6D" stroke="#3D2C24" stroke-width="3.5" stroke-linejoin="round"/>
+              <path d="M65 152H131" stroke="#3D2C24" stroke-width="3.5"/>
+              <rect x="91" y="146" width="14" height="12" rx="3" fill="#FBBF24" stroke="#3D2C24" stroke-width="2.5"/>
+              <!-- 騎士大頭與頭盔 -->
+              <rect x="58" y="46" width="84" height="78" rx="36" fill="#E06D6D" stroke="#3D2C24" stroke-width="4"/>
+              <!-- 頭盔頂冠 -->
+              <path d="M88 46C88 32 112 32 112 46" fill="#F28B82" stroke="#3D2C24" stroke-width="3.5"/>
+              <!-- 臉部膚色區 -->
+              <rect x="70" y="68" width="62" height="46" rx="22" fill="#FDE2C4" stroke="#3D2C24" stroke-width="3.5"/>
+              <!-- 頭盔護耳 -->
+              <rect x="52" y="76" width="16" height="28" rx="8" fill="#C95959" stroke="#3D2C24" stroke-width="3.5"/>
+              <rect x="134" y="76" width="16" height="28" rx="8" fill="#C95959" stroke="#3D2C24" stroke-width="3.5"/>
+              <!-- 開心眯眯眼 > < -->
+              <path d="M80 84L88 89L80 94" stroke="#3D2C24" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M122 84L114 89L122 94" stroke="#3D2C24" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- 腮紅與大笑嘴巴 -->
+              <ellipse cx="79" cy="99" rx="5" ry="3" fill="#FCA5A5"/>
+              <ellipse cx="123" cy="99" rx="5" ry="3" fill="#FCA5A5"/>
+              <path d="M92 96H110C110 105 105 109 101 109C97 109 92 105 92 96Z" fill="#991B1B" stroke="#3D2C24" stroke-width="2.5"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 互動破冰試算器彈窗 Modal -->
+  <div id="iceModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-[#FFF9F2] border-4 border-[#EA580C] rounded-3xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-xl font-black text-[#9A3412] flex items-center gap-2">
+          <span>🧊</span> 破冰規則互動試算器
+        </h3>
+        <button type="button" onclick="closeIceModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 font-black text-slate-700 cursor-pointer">✕</button>
+      </div>
+      <p class="text-sm font-bold text-slate-600 mb-4">
+        點選下方手牌組成一組合法數列，測試數字總和是否達到 <span class="text-[#EA580C] font-black">≧ 30 分</span>破冰門檻：
+      </p>
+
+      <!-- 預設範例手牌池 -->
+      <div class="grid grid-cols-4 gap-2.5 mb-4" id="iceHandCards"></div>
+
+      <!-- 試算結果區 -->
+      <div class="bg-white border-2 border-orange-200 rounded-2xl p-4 text-center">
+        <div class="text-xs font-bold text-slate-500 mb-1">目前已選牌組</div>
+        <div id="iceSelectedList" class="text-base font-black text-slate-800 min-h-[24px]">尚未選擇手牌</div>
+        <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+          <span class="text-sm font-bold text-slate-600">目前加總分數：</span>
+          <span id="iceSumScore" class="text-2xl font-black text-slate-800">0 分</span>
+        </div>
+        <div id="iceStatusBanner" class="mt-3 py-2 px-3 rounded-xl text-sm font-black bg-slate-100 text-slate-600">
+          請點選至少 3 張構成數列的手牌
+        </div>
+      </div>
+
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" onclick="resetIceCalc()" class="px-4 py-2 rounded-full text-sm font-black bg-slate-200 hover:bg-slate-300 text-slate-700 cursor-pointer">清空重選</button>
+        <button type="button" onclick="closeIceModal()" class="px-5 py-2 rounded-full text-sm font-black bg-[#EA580C] hover:bg-[#C2410C] text-white cursor-pointer">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. 花色正負數對照提示切換
+    const toggleSuitHintBtn = document.getElementById('toggleSuitHintBtn');
+    const suitHintBox = document.getElementById('suitHintBox');
+    const suitHintArrow = document.getElementById('suitHintArrow');
+    toggleSuitHintBtn.addEventListener('click', () => {
+      const isHidden = suitHintBox.classList.contains('hidden');
+      suitHintBox.classList.toggle('hidden');
+      suitHintArrow.textContent = isHidden ? '▲' : '▼';
+    });
+
+    // 2. 特殊數列標示卡資料與互動切換
+    const badgeData = {
+      arithmetic: {
+        title: '等差數列（每次 +2）',
+        seq: '1 → 3 → 5 → 7',
+        desc: '相鄰兩張數字的差相同',
+        colorClass: 'text-blue-700',
+        activeBtn: 'bg-blue-500 text-white'
+      },
+      geometric: {
+        title: '等比數列（每次 ×2）',
+        seq: '1 → 2 → 4 → 8',
+        desc: '相鄰兩張數字的比值相同',
+        colorClass: 'text-purple-700',
+        activeBtn: 'bg-purple-500 text-white'
+      },
+      consecutive: {
+        title: '連續數列（每次 +1）',
+        seq: '3 → 4 → 5 → 6',
+        desc: '每次固定增加或減少 1',
+        colorClass: 'text-emerald-700',
+        activeBtn: 'bg-emerald-600 text-white'
+      },
+      alternating: {
+        title: '交替數列（正負交替）',
+        seq: '-2 → +2 → -2 → +2',
+        desc: '紅黑牌依照固定正負模式交替',
+        colorClass: 'text-rose-600',
+        activeBtn: 'bg-rose-500 text-white'
+      },
+      square: {
+        title: '平方數列（整數平方）',
+        seq: '1 → 4 → 9 → 16',
+        desc: '依序為 1²、2²、3²、4² 平方數',
+        colorClass: 'text-amber-700',
+        activeBtn: 'bg-amber-500 text-white'
+      }
+    };
+
+    function selectBadgeType(type) {
+      const info = badgeData[type];
+      if (!info) return;
+
+      const titleEl = document.getElementById('badgeTitle');
+      const seqEl = document.getElementById('badgeSeq');
+      const descEl = document.getElementById('badgeDesc');
+
+      titleEl.textContent = info.title;
+      titleEl.className = `text-sm font-black ${info.colorClass}`;
+      seqEl.textContent = info.seq;
+      descEl.textContent = info.desc;
+
+      document.querySelectorAll('.badge-tab').forEach(btn => {
+        btn.className = 'badge-tab px-2.5 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer';
+      });
+      const activeBtn = document.getElementById(`badge-btn-${type}`);
+      if (activeBtn) {
+        activeBtn.className = `badge-tab px-2.5 py-1 rounded-full text-xs font-black shadow-xs cursor-pointer ${info.activeBtn}`;
+      }
+    }
+
+    // 3. 重新排列數列動態演示
+    let isRearranged = true;
+    function toggleRearrangeDemo() {
+      isRearranged = !isRearranged;
+      const slot2 = document.getElementById('rearrangeSlot2');
+      const slot3 = document.getElementById('rearrangeSlot3');
+      if (isRearranged) {
+        slot2.textContent = '5';
+        slot3.textContent = '3';
+      } else {
+        slot2.textContent = '3';
+        slot3.textContent = '5';
+      }
+    }
+
+    // 4. 模擬抽取牌卡（含正負數規則與鬼牌/0牌）
+    const sampleDeck = [
+      { label: '♥ 8（正數 +8）', color: 'text-rose-600' },
+      { label: '♦ 11 / J（正數 +11）', color: 'text-rose-600' },
+      { label: '♠ 4（負數 -4）', color: 'text-slate-800' },
+      { label: '♣ 7（負數 -7）', color: 'text-slate-800' },
+      { label: '🃏 鬼牌 JOKER（萬用牌）', color: 'text-indigo-700' },
+      { label: '⭕ 0 牌（中性橋接數 0）', color: 'text-emerald-700' },
+      { label: '♥ 12 / Q（正數 +12）', color: 'text-rose-600' },
+      { label: '♠ 2（負數 -2）', color: 'text-slate-800' }
+    ];
+
+    function drawSimulatedCard() {
+      const picked = sampleDeck[Math.floor(Math.random() * sampleDeck.length)];
+      const resultEl = document.getElementById('drawnCardResult');
+      resultEl.className = `text-[11px] font-black bg-white border border-purple-300 px-2.5 py-0.5 rounded-full mt-1 shadow-xs ${picked.color}`;
+      resultEl.textContent = `抽到：${picked.label}`;
+    }
+
+    // 5. 思考時間倒數計時器（預設 15 秒，可切 30 秒）
+    let timerSeconds = 15;
+    let timerPreset = 15;
+    let timerInterval = null;
+
+    function updateTimerUI() {
+      const display = document.getElementById('timerDisplay');
+      const mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+      const secs = String(timerSeconds % 60).padStart(2, '0');
+      display.textContent = `${mins}:${secs}`;
+      if (timerSeconds <= 5 && timerSeconds > 0) {
+        display.classList.add('text-rose-600');
+      } else if (timerSeconds === 0) {
+        display.classList.add('text-rose-600');
+      } else {
+        display.classList.remove('text-rose-600');
+      }
+    }
+
+    function setTimerPreset(sec) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerPreset = sec;
+      timerSeconds = sec;
+      document.getElementById('timerStartBtn').textContent = '開始';
+      updateTimerUI();
+    }
+
+    function toggleTimer() {
+      const btn = document.getElementById('timerStartBtn');
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        btn.textContent = '繼續';
+      } else {
+        if (timerSeconds <= 0) timerSeconds = timerPreset;
+        btn.textContent = '暫停';
+        timerInterval = setInterval(() => {
+          if (timerSeconds > 0) {
+            timerSeconds--;
+            updateTimerUI();
+          } else {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            btn.textContent = '重來';
+          }
+        }, 1000);
+      }
+    }
+
+    function resetTimer() {
+      setTimerPreset(timerPreset);
+    }
+
+    // 6. 破冰規則互動試算器邏輯
+    const iceDemoCards = [
+      { id: 1, suit: '♥', label: '8', val: 8, isRed: true },
+      { id: 2, suit: '♦', label: '10', val: 10, isRed: true },
+      { id: 3, suit: '♥', label: '12', val: 12, isRed: true },
+      { id: 4, suit: '♦', label: '6', val: 6, isRed: true },
+      { id: 5, suit: '♥', label: '9', val: 9, isRed: true },
+      { id: 6, suit: '♦', label: '13', val: 13, isRed: true },
+      { id: 7, suit: '♠', label: '3', val: -3, isRed: false },
+      { id: 8, suit: '♥', label: '4', val: 4, isRed: true }
+    ];
+    let selectedIceIds = new Set([1, 2, 3]); // 預設展示 8 + 10 + 12 = 30
+
+    function renderIceCards() {
+      const container = document.getElementById('iceHandCards');
+      container.innerHTML = '';
+      iceDemoCards.forEach(card => {
+        const isSelected = selectedIceIds.has(card.id);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.onclick = () => {
+          if (selectedIceIds.has(card.id)) selectedIceIds.delete(card.id);
+          else selectedIceIds.add(card.id);
+          renderIceCards();
+        };
+        btn.className = `play-card py-2.5 px-2 flex flex-col items-center justify-center cursor-pointer ${
+          isSelected ? 'ring-3 ring-[#EA580C] bg-orange-50 -translate-y-1' : 'opacity-85'
+        }`;
+        btn.innerHTML = `
+          <span class="text-lg font-black ${card.isRed ? 'text-rose-600' : 'text-slate-800'}">${card.suit}${card.label}</span>
+          <span class="text-[11px] font-bold text-slate-500">${card.val > 0 ? '+' + card.val : card.val} 分</span>
+        `;
+        container.appendChild(btn);
+      });
+
+      const chosen = iceDemoCards.filter(c => selectedIceIds.has(c.id));
+      const sum = chosen.reduce((acc, c) => acc + c.val, 0);
+      document.getElementById('iceSelectedList').textContent =
+        chosen.length ? chosen.map(c => `${c.suit}${c.label}(${c.val > 0 ? '+' + c.val : c.val})`).join(' + ') : '尚未選擇手牌';
+      document.getElementById('iceSumScore').textContent = `${sum} 分`;
+
+      const statusEl = document.getElementById('iceStatusBanner');
+      if (chosen.length < 3) {
+        statusEl.className = 'mt-3 py-2 px-3 rounded-xl text-sm font-black bg-slate-100 text-slate-600';
+        statusEl.textContent = '請點選至少 3 張手牌組成數列';
+      } else if (sum >= 30) {
+        statusEl.className = 'mt-3 py-2 px-3 rounded-xl text-sm font-black bg-emerald-100 text-emerald-800 border border-emerald-300';
+        statusEl.textContent = `🎉 總和 ${sum} 分 ≧ 30 分，破冰成功！`;
+      } else {
+        statusEl.className = 'mt-3 py-2 px-3 rounded-xl text-sm font-black bg-rose-100 text-rose-800 border border-rose-300';
+        statusEl.textContent = `❌ 總和 ${sum} 分（還差 ${30 - sum} 分才達 30 分門檻）`;
+      }
+    }
+
+    function resetIceCalc() {
+      selectedIceIds.clear();
+      renderIceCards();
+    }
+
+    function openIceModal() {
+      renderIceCards();
+      document.getElementById('iceModal').classList.remove('hidden');
+    }
+
+    function closeIceModal() {
+      document.getElementById('iceModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
